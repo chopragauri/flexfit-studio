@@ -6,11 +6,11 @@ import { formatDate, formatDateTime } from "@/lib/format";
 export default function AdminAttendancePage() {
   const { data: user } = trpc.auth.me.useQuery();
   const { data: checkinsPerDay, isLoading: checkinsLoading } =
-    trpc.admin.checkinsPerDay.useQuery();
+    trpc.attendance.checkinsPerDay.useQuery();
   const { data: topTrainers, isLoading: trainersLoading } =
-    trpc.admin.topTrainers.useQuery();
+    trpc.attendance.topTrainers.useQuery();
   const { data: noShowList, isLoading: noShowLoading } =
-    trpc.admin.noShowList.useQuery();
+    trpc.attendance.noShowList.useQuery();
 
   const isLoading = checkinsLoading || trainersLoading || noShowLoading;
 

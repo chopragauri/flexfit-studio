@@ -6,6 +6,8 @@ import { classesRouter } from "./classes";
 import { bookingsRouter } from "./bookings";
 import { paymentsRouter } from "./payments";
 import { adminRouter } from "./admin";
+import { reportsRouter } from "./reports";
+import { attendanceRouter } from "./attendance";
 import { notificationsRouter } from "./notifications";
 import { trainersRouter } from "./trainers";
 import { corporateBookingsRouter } from "./corporate-bookings";
@@ -22,6 +24,8 @@ export const appRouter = router({
   corporateBookings: corporateBookingsRouter,
   payments: paymentsRouter,
   admin: adminRouter,
+  reports: reportsRouter,
+  attendance: attendanceRouter,
   adminCompanies: adminCompaniesRouter,
   notifications: notificationsRouter,
   trainers: trainersRouter,

@@ -71,6 +71,24 @@ describe("adminProcedure", () => {
     });
   });
 
+  it("guards the reporting and attendance surfaces", async () => {
+    const { member, trainer, admin } = await roles(db);
+
+    for (const user of [member, trainer]) {
+      await expect(caller(db, user).reports.refundCount()).rejects.toThrow(
+        "Admins only.",
+      );
+      await expect(caller(db, user).attendance.noShowList()).rejects.toThrow(
+        "Admins only.",
+      );
+    }
+
+    await expect(caller(db, admin).reports.refundCount()).resolves.toEqual({
+      count: 0,
+    });
+    await expect(caller(db, admin).attendance.noShowList()).resolves.toEqual([]);
+  });
+
   it("guards the company management surface", async () => {
     const { member, trainer, admin } = await roles(db);
 

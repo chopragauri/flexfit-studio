@@ -1,20 +1,12 @@
 import { z } from "zod";
-import { TRPCError } from "@trpc/server";
 import { eq, and, gte } from "drizzle-orm";
 import { classes, trainerAvailability } from "@/db/schema";
-import { router, protectedProcedure } from "../trpc";
+import { router, trainerProcedure, staffProcedure } from "../trpc";
+
+const dayOfWeek = z.number().int().min(0).max(6);
 
 export const trainersRouter = router({
-  upcomingClasses: protectedProcedure.query(async ({ ctx }) => {
-    if (ctx.user.role !== "trainer") {
-      throw new TRPCError({
-        code: "FORBIDDEN",
-        message: "Only trainers can access this.",
-      });
-    }
-
-    const now = new Date().toISOString();
-
+  upcomingClasses: trainerProcedure.query(async ({ ctx }) => {
     return ctx.db
       .select({
         id: classes.id,
@@ -28,46 +20,31 @@ export const trainersRouter = router({
       .where(
         and(
           eq(classes.trainerId, ctx.user.id),
-          gte(classes.startsAt, now),
+          gte(classes.startsAt, new Date().toISOString()),
           eq(classes.cancelled, false),
         ),
       )
       .orderBy(classes.startsAt);
   }),
 
-  availability: protectedProcedure.query(async ({ ctx }) => {
-    if (ctx.user.role !== "trainer") {
-      throw new TRPCError({
-        code: "FORBIDDEN",
-        message: "Only trainers can access this.",
-      });
-    }
-
-    const rows = await ctx.db
+  availability: trainerProcedure.query(async ({ ctx }) => {
+    return ctx.db
       .select()
       .from(trainerAvailability)
       .where(eq(trainerAvailability.trainerId, ctx.user.id))
       .orderBy(trainerAvailability.dayOfWeek);
-
-    return rows;
   }),
 
-  setAvailability: protectedProcedure
+  setAvailability: trainerProcedure
     .input(
       z.object({
-        dayOfWeek: z.number().int().min(0).max(6),
+        dayOfWeek,
         startTime: z.string(),
         endTime: z.string(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      if (ctx.user.role !== "trainer") {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Only trainers can access this.",
-        });
-      }
-
+      // One window per day per trainer: setting a day replaces it.
       const existing = await ctx.db
         .select()
         .from(trainerAvailability)
@@ -82,58 +59,41 @@ export const trainersRouter = router({
       if (existing) {
         return ctx.db
           .update(trainerAvailability)
-          .set({
-            startTime: input.startTime,
-            endTime: input.endTime,
-          })
+          .set({ startTime: input.startTime, endTime: input.endTime })
           .where(eq(trainerAvailability.id, existing.id))
           .returning()
           .get();
-      } else {
-        return ctx.db
-          .insert(trainerAvailability)
-          .values({
-            trainerId: ctx.user.id,
-            dayOfWeek: input.dayOfWeek,
-            startTime: input.startTime,
-            endTime: input.endTime,
-          })
-          .returning()
-          .get();
       }
+
+      return ctx.db
+        .insert(trainerAvailability)
+        .values({
+          trainerId: ctx.user.id,
+          dayOfWeek: input.dayOfWeek,
+          startTime: input.startTime,
+          endTime: input.endTime,
+        })
+        .returning()
+        .get();
     }),
 
-  removeAvailability: protectedProcedure
-    .input(z.object({ dayOfWeek: z.number().int().min(0).max(6) }))
+  removeAvailability: trainerProcedure
+    .input(z.object({ dayOfWeek }))
     .mutation(async ({ ctx, input }) => {
-      if (ctx.user.role !== "trainer") {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Only trainers can access this.",
-        });
-      }
-
-      const existing = await ctx.db
-        .select()
-        .from(trainerAvailability)
+      await ctx.db
+        .delete(trainerAvailability)
         .where(
           and(
             eq(trainerAvailability.trainerId, ctx.user.id),
             eq(trainerAvailability.dayOfWeek, input.dayOfWeek),
           ),
-        )
-        .get();
-
-      if (existing) {
-        await ctx.db
-          .delete(trainerAvailability)
-          .where(eq(trainerAvailability.id, existing.id));
-      }
+        );
 
       return { success: true };
     }),
 
-  checkAvailability: protectedProcedure
+  /** Asked about someone else's trainer, so this one is staff-wide. */
+  checkAvailability: staffProcedure
     .input(
       z.object({
         trainerId: z.number(),
@@ -142,23 +102,10 @@ export const trainersRouter = router({
       }),
     )
     .query(async ({ ctx, input }) => {
-      // This can be called by staff or trainers
-      if (ctx.user.role !== "trainer" && ctx.user.role !== "admin") {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Staff only.",
-        });
-      }
       const classStart = new Date(input.startsAt);
-      const classEnd = new Date(classStart.getTime() + input.durationMin * 60000);
-
-      const dayOfWeek = classStart.getUTCDay();
-      const startTimeStr = String(classStart.getUTCHours()).padStart(2, "0") +
-        ":" +
-        String(classStart.getUTCMinutes()).padStart(2, "0");
-      const endTimeStr = String(classEnd.getUTCHours()).padStart(2, "0") +
-        ":" +
-        String(classEnd.getUTCMinutes()).padStart(2, "0");
+      const classEnd = new Date(
+        classStart.getTime() + input.durationMin * 60000,
+      );
 
       const availability = await ctx.db
         .select()
@@ -166,7 +113,7 @@ export const trainersRouter = router({
         .where(
           and(
             eq(trainerAvailability.trainerId, input.trainerId),
-            eq(trainerAvailability.dayOfWeek, dayOfWeek),
+            eq(trainerAvailability.dayOfWeek, classStart.getUTCDay()),
           ),
         )
         .get();
@@ -175,17 +122,13 @@ export const trainersRouter = router({
         return { available: false, reason: "No availability set for this day" };
       }
 
-      const availStart = availability.startTime;
-      const availEnd = availability.endTime;
-
-      const isWithinAvailability =
-        startTimeStr >= availStart && endTimeStr <= availEnd;
-
-      if (!isWithinAvailability) {
+      const startsWithin = utcClockTime(classStart) >= availability.startTime;
+      const endsWithin = utcClockTime(classEnd) <= availability.endTime;
+      if (!startsWithin || !endsWithin) {
         return { available: false, reason: "Outside availability hours" };
       }
 
-      const conflictingClasses = await ctx.db
+      const trainerClasses = await ctx.db
         .select()
         .from(classes)
         .where(
@@ -195,17 +138,28 @@ export const trainersRouter = router({
           ),
         );
 
-      for (const cls of conflictingClasses) {
-        const existStart = new Date(cls.startsAt);
-        const existEnd = new Date(
-          existStart.getTime() + cls.durationMin * 60000,
+      const clashes = trainerClasses.some((cls) => {
+        const existingStart = new Date(cls.startsAt);
+        const existingEnd = new Date(
+          existingStart.getTime() + cls.durationMin * 60000,
         );
+        return classStart < existingEnd && classEnd > existingStart;
+      });
 
-        if (classStart < existEnd && classEnd > existStart) {
-          return { available: false, reason: "Trainer already has a class at this time" };
-        }
+      if (clashes) {
+        return {
+          available: false,
+          reason: "Trainer already has a class at this time",
+        };
       }
 
       return { available: true };
     }),
 });
+
+/** `HH:MM` in UTC, matching how availability windows are stored. */
+function utcClockTime(date: Date): string {
+  const hours = String(date.getUTCHours()).padStart(2, "0");
+  const minutes = String(date.getUTCMinutes()).padStart(2, "0");
+  return `${hours}:${minutes}`;
+}

@@ -56,3 +56,18 @@ export const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   }
   return next({ ctx });
 });
+
+/**
+ * A trainer's own views — their schedule, their availability. Admins are
+ * deliberately excluded: these procedures answer "mine", and an admin has no
+ * classes of their own.
+ */
+export const trainerProcedure = protectedProcedure.use(({ ctx, next }) => {
+  if (ctx.user.role !== "trainer") {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "Only trainers can access this.",
+    });
+  }
+  return next({ ctx });
+});

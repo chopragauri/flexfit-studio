@@ -5,13 +5,13 @@ import { formatMoney, formatDate } from "@/lib/format";
 
 export default function AdminReportsPage() {
   const { data: revenueByMonth, isLoading: monthLoading } =
-    trpc.admin.revenueByMonth.useQuery();
+    trpc.reports.revenueByMonth.useQuery();
   const { data: revenueByMethod, isLoading: methodLoading } =
-    trpc.admin.revenueByMethod.useQuery();
+    trpc.reports.revenueByMethod.useQuery();
   const { data: expiringMembers, isLoading: expiringLoading } =
-    trpc.admin.expiringMemberships.useQuery();
+    trpc.reports.expiringMemberships.useQuery();
   const { data: refundData, isLoading: refundLoading } =
-    trpc.admin.refundCount.useQuery();
+    trpc.reports.refundCount.useQuery();
 
   const isLoading = monthLoading || methodLoading || expiringLoading || refundLoading;
 
