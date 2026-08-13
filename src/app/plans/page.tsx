@@ -2,6 +2,7 @@
 
 import { trpc } from "@/lib/trpc";
 import { formatMoney } from "@/lib/format";
+import { isUnlimited } from "@/domain/booking-policy";
 
 export default function PlansPage() {
   const utils = trpc.useUtils();
@@ -47,7 +48,9 @@ export default function PlansPage() {
 
             <p className="muted text-sm">
               {p.durationDays} days &middot;{" "}
-              {p.classCredits >= 999 ? "Unlimited classes" : `${p.classCredits} credits`}
+              {isUnlimited(p.classCredits)
+                ? "Unlimited classes"
+                : `${p.classCredits} credits`}
             </p>
 
             <button

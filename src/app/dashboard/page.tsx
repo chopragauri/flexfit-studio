@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { formatDate, formatDateTime } from "@/lib/format";
+import { isUnlimited } from "@/domain/booking-policy";
 import { RescheduleModal } from "@/components/reschedule-modal";
 
 export default function DashboardPage() {
@@ -69,7 +70,11 @@ export default function DashboardPage() {
             </div>
             <div>
               <dt className="muted">Credits</dt>
-              <dd>{ms.creditsRemaining >= 999 ? "Unlimited" : ms.creditsRemaining}</dd>
+              <dd>
+                {isUnlimited(ms.creditsRemaining)
+                  ? "Unlimited"
+                  : ms.creditsRemaining}
+              </dd>
             </div>
           </dl>
         ) : (

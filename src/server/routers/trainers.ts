@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { eq, and, gte } from "drizzle-orm";
-import { classes, users, trainerAvailability } from "@/db/schema";
+import { classes, trainerAvailability } from "@/db/schema";
 import { router, protectedProcedure } from "../trpc";
 
 export const trainersRouter = router({

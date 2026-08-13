@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { and, eq, gte, sql, lte, desc, inArray } from "drizzle-orm";
+import { and, eq, gte, sql, lte, inArray } from "drizzle-orm";
 import {
   users,
   memberships,

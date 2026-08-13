@@ -2,13 +2,8 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
 import { membershipPlans, memberships, payments } from "@/db/schema";
+import { addDays, today } from "@/lib/datetime";
 import { router, publicProcedure, protectedProcedure, adminProcedure } from "../trpc";
-
-function addDays(dateIso: string, days: number): string {
-  const d = new Date(dateIso);
-  d.setDate(d.getDate() + days);
-  return d.toISOString().slice(0, 10);
-}
 
 export const plansRouter = router({
   list: publicProcedure
@@ -42,15 +37,15 @@ export const plansRouter = router({
         });
       }
 
-      const today = new Date().toISOString().slice(0, 10);
+      const startDate = today();
 
       const membership = await ctx.db
         .insert(memberships)
         .values({
           userId: ctx.user.id,
           planId: plan.id,
-          startDate: today,
-          endDate: addDays(today, plan.durationDays),
+          startDate,
+          endDate: addDays(startDate, plan.durationDays),
           creditsRemaining: plan.classCredits,
           status: "active",
         })

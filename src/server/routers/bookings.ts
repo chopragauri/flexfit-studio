@@ -2,26 +2,17 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import { bookings, classes, memberships, checkins, users } from "@/db/schema";
+import { hoursUntil, today } from "@/lib/datetime";
+import {
+  FREE_CANCELLATION_HOURS,
+  UNLIMITED_CREDITS,
+} from "@/domain/booking-policy";
 import { router, protectedProcedure, staffProcedure } from "../trpc";
-
-/**
- * Members may cancel free of charge up to this many hours before the class
- * starts. Cancelling later still frees the spot but forfeits the credit.
- */
-export const FREE_CANCELLATION_HOURS = 12;
-
-/** Plans with this many credits are treated as unlimited and never decrement. */
-export const UNLIMITED_CREDITS = 999;
-
-function hoursUntil(iso: string, now = new Date()): number {
-  return (new Date(iso).getTime() - now.getTime()) / 36e5;
-}
 
 async function activeMembershipFor(
   db: typeof import("@/db").db,
   userId: number,
 ) {
-  const today = new Date().toISOString().slice(0, 10);
   return db
     .select()
     .from(memberships)
@@ -29,7 +20,7 @@ async function activeMembershipFor(
       and(
         eq(memberships.userId, userId),
         eq(memberships.status, "active"),
-        sql`${memberships.endDate} >= ${today}`,
+        sql`${memberships.endDate} >= ${today()}`,
       ),
     )
     .orderBy(desc(memberships.endDate))

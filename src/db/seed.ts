@@ -16,6 +16,7 @@ import {
   reschedules,
 } from "./schema";
 import { hashPassword } from "../lib/password";
+import { UNLIMITED_CREDITS } from "../domain/booking-policy";
 
 function daysFromNow(n: number): string {
   const d = new Date();
@@ -165,7 +166,10 @@ async function seed() {
       planId: plan.id,
       startDate: dateOnly(started),
       endDate: dateOnly(started + plan.durationDays),
-      creditsRemaining: plan.classCredits === 999 ? 999 : plan.classCredits - (i % 4),
+      creditsRemaining:
+        plan.classCredits === UNLIMITED_CREDITS
+          ? UNLIMITED_CREDITS
+          : plan.classCredits - (i % 4),
       status: (started + plan.durationDays < 0 ? "expired" : "active") as
         | "expired"
         | "active",
