@@ -16,3 +16,9 @@ if (process.env.NODE_ENV !== "production") {
 
 export const db = drizzle(client, { schema });
 export { schema };
+
+/**
+ * Services take the database as a parameter rather than importing the singleton,
+ * so tests can hand them a throwaway file database.
+ */
+export type Database = typeof db;
