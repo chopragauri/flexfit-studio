@@ -1,7 +1,7 @@
 import type { Config } from "drizzle-kit";
 
 export default {
-  schema: "./src/db/schema.ts",
+  schema: "./src/db/schema/index.ts",
   out: "./drizzle",
   dialect: "turso",
   // Mirrors src/db/index.ts so `drizzle-kit push` and the app always agree on

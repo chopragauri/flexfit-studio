@@ -89,20 +89,24 @@ export const paymentsRouter = router({
         });
       }
 
-      const updated = await ctx.db
-        .update(payments)
-        .set({ status: "refunded" })
-        .where(eq(payments.id, input.id))
-        .returning()
-        .get();
+      // The member's credits and any future bookings are deliberately left
+      // alone; see docs/refactoring-decisions.md, preserved behaviour #6.
+      return ctx.db.transaction(async (tx) => {
+        const updated = await tx
+          .update(payments)
+          .set({ status: "refunded" })
+          .where(eq(payments.id, input.id))
+          .returning()
+          .get();
 
-      if (row.membershipId) {
-        await ctx.db
-          .update(memberships)
-          .set({ status: "cancelled" })
-          .where(eq(memberships.id, row.membershipId));
-      }
+        if (row.membershipId) {
+          await tx
+            .update(memberships)
+            .set({ status: "cancelled" })
+            .where(eq(memberships.id, row.membershipId));
+        }
 
-      return updated;
+        return updated;
+      });
     }),
 });

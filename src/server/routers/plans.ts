@@ -39,29 +39,33 @@ export const plansRouter = router({
 
       const startDate = today();
 
-      const membership = await ctx.db
-        .insert(memberships)
-        .values({
+      // A previous membership is deliberately left active; see
+      // docs/refactoring-decisions.md, preserved behaviour #7.
+      return ctx.db.transaction(async (tx) => {
+        const membership = await tx
+          .insert(memberships)
+          .values({
+            userId: ctx.user.id,
+            planId: plan.id,
+            startDate,
+            endDate: addDays(startDate, plan.durationDays),
+            creditsRemaining: plan.classCredits,
+            status: "active",
+          })
+          .returning()
+          .get();
+
+        await tx.insert(payments).values({
           userId: ctx.user.id,
-          planId: plan.id,
-          startDate,
-          endDate: addDays(startDate, plan.durationDays),
-          creditsRemaining: plan.classCredits,
-          status: "active",
-        })
-        .returning()
-        .get();
+          membershipId: membership.id,
+          amountCents: plan.priceCents,
+          method: input.method,
+          status: "paid",
+          reference: `PAY-${Date.now()}`,
+        });
 
-      await ctx.db.insert(payments).values({
-        userId: ctx.user.id,
-        membershipId: membership.id,
-        amountCents: plan.priceCents,
-        method: input.method,
-        status: "paid",
-        reference: `PAY-${Date.now()}`,
+        return membership;
       });
-
-      return membership;
     }),
 
   create: adminProcedure

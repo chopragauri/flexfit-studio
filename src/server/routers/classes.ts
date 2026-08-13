@@ -132,24 +132,31 @@ export const classesRouter = router({
   cancel: adminProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      const cls = await ctx.db
-        .update(classes)
-        .set({ cancelled: true })
-        .where(eq(classes.id, input.id))
-        .returning()
-        .get();
+      // Corporate bookings are deliberately left standing and no credits are
+      // returned; see docs/refactoring-decisions.md, preserved behaviour #5.
+      return ctx.db.transaction(async (tx) => {
+        const cls = await tx
+          .update(classes)
+          .set({ cancelled: true })
+          .where(eq(classes.id, input.id))
+          .returning()
+          .get();
 
-      if (!cls) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Class not found." });
-      }
+        if (!cls) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Class not found.",
+          });
+        }
 
-      await ctx.db
-        .update(bookings)
-        .set({ status: "cancelled", cancelledAt: new Date().toISOString() })
-        .where(
-          and(eq(bookings.classId, input.id), eq(bookings.status, "booked")),
-        );
+        await tx
+          .update(bookings)
+          .set({ status: "cancelled", cancelledAt: new Date().toISOString() })
+          .where(
+            and(eq(bookings.classId, input.id), eq(bookings.status, "booked")),
+          );
 
-      return cls;
+        return cls;
+      });
     }),
 });
