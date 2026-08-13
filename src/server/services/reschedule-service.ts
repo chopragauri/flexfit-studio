@@ -3,7 +3,7 @@ import type { TRPC_ERROR_CODE_KEY } from "@trpc/server/unstable-core-do-not-impo
 import { bookings, classes, type Booking, type GymClass } from "@/db/schema";
 import { canReschedule, FREE_RESCHEDULE_HOURS } from "@/domain/booking-policy";
 import { hoursUntil } from "@/lib/datetime";
-import type { Database } from "@/db";
+import type { DbExecutor } from "@/db";
 
 export type RescheduleRejection = {
   code: TRPC_ERROR_CODE_KEY;
@@ -36,7 +36,7 @@ function reject(
  * decides which message a member sees when two conditions fail at once.
  */
 export async function evaluateReschedule(
-  db: Database,
+  db: DbExecutor,
   userId: number,
   input: { fromBookingId: number; toClassId: number },
 ): Promise<RescheduleCheck> {

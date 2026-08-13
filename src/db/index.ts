@@ -22,3 +22,14 @@ export { schema };
  * so tests can hand them a throwaway file database.
  */
 export type Database = typeof db;
+
+/** The handle inside `db.transaction(...)`. */
+export type Transaction = Parameters<
+  Parameters<Database["transaction"]>[0]
+>[0];
+
+/**
+ * Anything that can run a statement. Service functions take this so the same
+ * code works inside and outside a transaction.
+ */
+export type DbExecutor = Database | Transaction;
