@@ -142,7 +142,7 @@ presentation only; the server is the enforcement point, and
 
 ## Testing
 
-115 tests, no mocks of the database. `src/test/global-setup.ts` applies the
+116 tests, no mocks of the database. `src/test/global-setup.ts` applies the
 schema once per run to a template file; each test file copies it, so files are
 isolated and run in parallel.
 

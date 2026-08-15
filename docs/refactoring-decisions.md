@@ -4,8 +4,9 @@ Every significant change, why it was made, what else was considered, what could
 have broken, and how that was checked.
 
 The constraint throughout: **the app must behave and look exactly as it did.**
-115 tests were written against the original code before anything was touched, and
-run after every phase.
+The suite now stands at 116 tests. They were written against the original code
+before anything was touched, and run after every phase — the counts quoted inside
+each decision below are the totals at that point in the sequence.
 
 ---
 
