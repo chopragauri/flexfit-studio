@@ -214,6 +214,34 @@ describe("quirk 7: subscribing never expires the previous membership", () => {
   });
 });
 
+describe("quirk 12: admin.classUtilisation reports a booked count of 1 for every class", () => {
+  it("counts rows where a booking's id equals its class id, not the class's roster", async () => {
+    const admin = await makeUser(db, { role: "admin" });
+    const cls = await makeClass(db, { capacity: 10 });
+
+    // Three confirmed seats on one class.
+    for (let i = 0; i < 3; i += 1) {
+      const member = await makeMemberWithMembership(db);
+      await caller(db, member.user).bookings.book({ classId: cls.id });
+    }
+
+    const [row] = (await caller(db, admin).admin.classUtilisation({})).filter(
+      (r) => r.id === cls.id,
+    );
+
+    // The true roster is 3. classUtilisation's correlated subquery renders
+    // without a table prefix, so `class_id = id` compares two columns of
+    // `bookings` and matches at most the single row whose id equals its
+    // class id. classes.list gets this right only because its leftJoin makes
+    // Drizzle qualify the columns.
+    const fromSchedule = (await caller(db, null).classes.list({})).find(
+      (c) => c.id === cls.id,
+    );
+    expect(fromSchedule!.booked).toBe(3);
+    expect(row.booked).not.toBe(3);
+  });
+});
+
 /** Users accumulate across cases in this file, so counts are asserted relatively. */
 async function memberCount() {
   const { users } = await import("@/db/schema");

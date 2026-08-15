@@ -1,13 +1,15 @@
 import { z } from "zod";
-import { eq, and, gte } from "drizzle-orm";
-import { classes, trainerAvailability } from "@/db/schema";
+import { eq, and, gte, sql } from "drizzle-orm";
+import { bookings, checkins, classes, trainerAvailability } from "@/db/schema";
 import { router, trainerProcedure, staffProcedure } from "../trpc";
 
 const dayOfWeek = z.number().int().min(0).max(6);
 
 export const trainersRouter = router({
   upcomingClasses: trainerProcedure.query(async ({ ctx }) => {
-    return ctx.db
+    // The roster and check-in counts come back with the class rather than as
+    // two more round trips per card.
+    const rows = await ctx.db
       .select({
         id: classes.id,
         name: classes.name,
@@ -15,6 +17,22 @@ export const trainersRouter = router({
         startsAt: classes.startsAt,
         durationMin: classes.durationMin,
         cancelled: classes.cancelled,
+        // The outer table is named in full rather than interpolated: in a
+        // single-table select Drizzle renders `${classes.id}` unqualified, and
+        // a bare `id` inside these subqueries binds to `bookings`, not
+        // `classes`. See docs/refactoring-decisions.md, preserved behaviour #12.
+        bookedCount: sql<number>`(
+          select count(*) from ${bookings}
+          where ${bookings.classId} = classes.id
+            and ${bookings.status} in ('booked','attended')
+        )`.as("booked_count"),
+        checkinCount: sql<number>`(
+          select count(*) from ${checkins}
+          where ${checkins.bookingId} in (
+            select ${bookings.id} from ${bookings}
+            where ${bookings.classId} = classes.id
+          )
+        )`.as("checkin_count"),
       })
       .from(classes)
       .where(
@@ -25,6 +43,12 @@ export const trainersRouter = router({
         ),
       )
       .orderBy(classes.startsAt);
+
+    return rows.map((row) => ({
+      ...row,
+      bookedCount: Number(row.bookedCount),
+      checkinCount: Number(row.checkinCount),
+    }));
   }),
 
   availability: trainerProcedure.query(async ({ ctx }) => {
