@@ -147,13 +147,23 @@ export default function TrainerSchedulePage() {
                         type="time"
                         value={startTime}
                         onChange={(e) => setStartTime(e.target.value)}
-                        className="input w-auto"
+                        className="rounded border px-2 py-1 text-sm"
+                        style={{
+                          borderColor: "var(--border)",
+                          background: "var(--bg-secondary)",
+                          color: "var(--fg)",
+                        }}
                       />
                       <input
                         type="time"
                         value={endTime}
                         onChange={(e) => setEndTime(e.target.value)}
-                        className="input w-auto"
+                        className="rounded border px-2 py-1 text-sm"
+                        style={{
+                          borderColor: "var(--border)",
+                          background: "var(--bg-secondary)",
+                          color: "var(--fg)",
+                        }}
                       />
                       <button
                         onClick={handleSave}
@@ -181,7 +191,12 @@ export default function TrainerSchedulePage() {
                         <button
                           onClick={() => handleRemove(idx)}
                           disabled={removeAvailability.isPending}
-                          className="btn btn-sm btn-danger"
+                          className="btn btn-sm"
+                          style={{
+                            background: "var(--bg-secondary)",
+                            color: "#ef4444",
+                            borderColor: "var(--border)",
+                          }}
                         >
                           Remove
                         </button>

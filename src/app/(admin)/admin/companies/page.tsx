@@ -72,7 +72,8 @@ export default function CompaniesPage() {
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="input"
+                className="w-full px-3 py-2 border rounded"
+                style={{ borderColor: "var(--border)" }}
                 placeholder="e.g. TechCorp Inc"
                 disabled={createMutation.isPending}
               />
@@ -84,7 +85,8 @@ export default function CompaniesPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="input"
+                className="w-full px-3 py-2 border rounded"
+                style={{ borderColor: "var(--border)" }}
                 placeholder="contact@techcorp.com"
                 disabled={createMutation.isPending}
               />
@@ -96,7 +98,8 @@ export default function CompaniesPage() {
                 type="number"
                 value={credits}
                 onChange={(e) => setCredits(e.target.value)}
-                className="input"
+                className="w-full px-3 py-2 border rounded"
+                style={{ borderColor: "var(--border)" }}
                 placeholder="0"
                 disabled={createMutation.isPending}
                 min="0"

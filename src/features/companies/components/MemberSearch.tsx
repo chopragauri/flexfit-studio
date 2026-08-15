@@ -34,7 +34,8 @@ export function MemberSearch({
         </label>
         <input
           id="member-search"
-          className="input"
+          className="w-full px-3 py-2 border rounded"
+          style={{ borderColor: "var(--border)" }}
           type="text"
           value={query}
           placeholder={`Search by name or email (${MIN_QUERY_LENGTH}+ chars)`}

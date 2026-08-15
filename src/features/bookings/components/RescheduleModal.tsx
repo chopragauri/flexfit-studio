@@ -103,7 +103,12 @@ export function RescheduleModal({
               <div className="flex items-center gap-2">
                 <h3 className="text-sm font-medium">{cls.name}</h3>
                 {(cls.full || (cls.spotsLeft ?? 0) === 0) && (
-                  <span className="badge badge-warning">Waitlist</span>
+                  <span
+                    className="rounded px-1.5 py-0.5 text-xs"
+                    style={{ background: "#3a2a1a", color: "#fbbf24" }}
+                  >
+                    Waitlist
+                  </span>
                 )}
               </div>
               <p className="muted mt-1 text-xs">

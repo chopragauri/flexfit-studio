@@ -3,12 +3,20 @@ type AlertProps = {
   children: React.ReactNode;
 };
 
-/** The error and success banners that every page used to hand-roll. */
+/**
+ * The error and success banners every page used to hand-roll.
+ *
+ * The markup is deliberately the same as the markup it replaces, down to the
+ * colours: this component removes the duplication, not the design.
+ */
 export function Alert({ tone, children }: AlertProps) {
   return (
-    <div className={tone === "error" ? "alert alert-error" : "alert alert-success"}>
+    <p
+      className="panel p-3 text-sm"
+      style={{ color: tone === "error" ? "var(--danger)" : "var(--success)" }}
+    >
       {children}
-    </div>
+    </p>
   );
 }
 

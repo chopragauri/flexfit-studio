@@ -22,7 +22,7 @@ export function NotificationBell() {
       {unreadCount && unreadCount > 0 && (
         <span
           className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full text-xs font-semibold"
-          style={{ backgroundColor: "var(--accent)", color: "var(--accent-contrast)" }}
+          style={{ backgroundColor: "var(--accent)" }}
         >
           {unreadCount > 9 ? "9+" : unreadCount}
         </span>

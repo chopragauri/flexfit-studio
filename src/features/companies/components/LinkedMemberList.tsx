@@ -31,7 +31,7 @@ export function LinkedMemberList({
             <div className="muted text-xs">{member.email}</div>
           </div>
           <button
-            className="btn-outline btn-sm btn-danger"
+            className="btn-outline btn-sm text-red-600"
             disabled={isPending}
             onClick={() => onUnlink(member.companyMemberId)}
           >

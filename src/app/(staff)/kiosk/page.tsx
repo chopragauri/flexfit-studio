@@ -4,7 +4,6 @@ import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { formatDateTime } from "@/lib/format";
 import type { RouterOutputs } from "@/lib/api-types";
-import { Alert } from "@/components/ui/Alert";
 import { AccessDenied, EmptyState, LoadingState } from "@/components/ui/PageState";
 
 type FoundMember = RouterOutputs["members"]["lookupByEmailOrPhone"];
@@ -72,20 +71,43 @@ export default function KioskPage() {
         </p>
       </div>
 
-      {confirmation && <Alert tone="success">✓ {confirmation}</Alert>}
+      {confirmation && (
+        <div
+          className="rounded border p-4"
+          style={{
+            borderColor: "#16a34a",
+            background: "#064e3b",
+            color: "#bbf7d0",
+          }}
+        >
+          <div className="font-medium">✓ Check-in successful</div>
+          <div className="muted mt-1 text-sm">{confirmation}</div>
+        </div>
+      )}
 
       <section className="space-y-3">
         <h2 className="font-medium">Find Member</h2>
-        <input
-          className="input"
-          type="text"
-          placeholder="Email or phone number"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-        />
+        <div className="flex gap-2">
+          <input
+            type="text"
+            placeholder="Email or phone number"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            className="flex-1 rounded border px-3 py-2 text-sm"
+            style={{
+              borderColor: "var(--border)",
+              background: "var(--bg-secondary)",
+              color: "var(--fg)",
+            }}
+          />
+        </div>
 
-        {lookup.isLoading && <LoadingState label="Searching..." />}
-        {lookup.error && <Alert tone="error">Member not found</Alert>}
+        {lookup.isLoading && <p className="muted text-sm">Searching...</p>}
+        {lookup.error && (
+          <p className="text-sm" style={{ color: "#ef4444" }}>
+            Member not found
+          </p>
+        )}
 
         {lookup.data && !selected && (
           <div className="panel flex items-center justify-between p-4">
@@ -121,10 +143,12 @@ export default function KioskPage() {
             </button>
           </div>
 
-          {membershipExpired && (
-            <Alert tone="error">⚠ Membership has expired</Alert>
-          )}
-          {outOfCredits && <Alert tone="error">⚠ No credits remaining</Alert>}
+          <MembershipWarning show={membershipExpired}>
+            ⚠ Membership has expired
+          </MembershipWarning>
+          <MembershipWarning show={outOfCredits}>
+            ⚠ No credits remaining
+          </MembershipWarning>
 
           <ClassesToCheckIn
             classes={upcoming.data}
@@ -183,6 +207,29 @@ function ClassesToCheckIn({
           </button>
         </div>
       ))}
+    </div>
+  );
+}
+
+/** The red banner the kiosk shows above the class list. */
+function MembershipWarning({
+  show,
+  children,
+}: {
+  show: boolean;
+  children: React.ReactNode;
+}) {
+  if (!show) return null;
+  return (
+    <div
+      className="rounded border p-3 text-sm"
+      style={{
+        borderColor: "#dc2626",
+        background: "#7f1d1d",
+        color: "#fca5a5",
+      }}
+    >
+      {children}
     </div>
   );
 }

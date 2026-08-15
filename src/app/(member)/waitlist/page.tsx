@@ -36,7 +36,10 @@ export default function WaitlistPage() {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <h3 className="font-medium">{w.className}</h3>
-                  <span className="badge badge-warning">
+                  <span
+                    className="rounded px-2 py-1 text-xs font-medium"
+                    style={{ background: "#3a2a1a", color: "#fbbf24" }}
+                  >
                     #{w.position} in queue
                   </span>
                 </div>

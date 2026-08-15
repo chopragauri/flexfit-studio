@@ -32,7 +32,8 @@ export function TopUpForm({
         </label>
         <input
           id="top-up"
-          className="input"
+          className="w-full px-3 py-2 border rounded"
+          style={{ borderColor: "var(--border)" }}
           type="number"
           min="1"
           value={amount}

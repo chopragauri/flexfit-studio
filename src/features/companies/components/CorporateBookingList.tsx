@@ -27,7 +27,7 @@ export function CorporateBookingList({
             <span className="font-medium">{booking.className}</span>
             <span
               className={
-                booking.status === "attended" ? "badge badge-success" : "muted"
+                booking.status === "attended" ? "text-green-600" : undefined
               }
             >
               {booking.status}

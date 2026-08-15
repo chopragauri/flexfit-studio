@@ -42,7 +42,12 @@ export default function SchedulePage() {
               <div className="flex items-center gap-2">
                 <h2 className="font-medium">{c.name}</h2>
                 {c.full && (
-                  <span className="badge badge-warning">Full</span>
+                  <span
+                    className="rounded px-1.5 py-0.5 text-xs"
+                    style={{ background: "#3a2a1a", color: "#fbbf24" }}
+                  >
+                    Full
+                  </span>
                 )}
               </div>
               <p className="muted mt-0.5 text-sm">
