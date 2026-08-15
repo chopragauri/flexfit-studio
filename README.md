@@ -92,10 +92,11 @@ original code before anything was touched and pass unchanged; the UI renders the
 same markup and colours it always did. The single intentional behaviour change is
 that multi-statement writes now run in a transaction.
 
-Two pre-existing bugs are documented but **not** fixed, because fixing them would
-change what the app does: `admin.classUtilisation` reports a booked count of 1 for
-nearly every class, and `/schedule` refetches forever without leaving its loading
-state. Both are described in `docs/refactoring-decisions.md` (#12 and #14).
+Two pre-existing bugs found during the refactor were fixed on request:
+`admin.classUtilisation` reported a booked count of 1 for nearly every class, and
+`/schedule` refetched forever without ever leaving its loading state. Both are
+written up in `docs/refactoring-decisions.md` (D8), along with the twelve other
+oddities that were deliberately left alone.
 
 ## Testing
 

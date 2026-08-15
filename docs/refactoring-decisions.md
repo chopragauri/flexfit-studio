@@ -176,14 +176,43 @@ accident fails the suite.
 | 9 | With zero unread notifications, `{unreadCount && unreadCount > 0 && …}` evaluates to `0` and React renders a literal "0" beside the bell. | code |
 | 10 | `members.updateProfile` with no fields reaches Drizzle as `.set({})`. | code |
 | 11 | `admin.classUtilisation` applies `.limit()` with no `ORDER BY`, so "top N" is whatever SQLite returns first. | code |
-| 12 | `admin.classUtilisation` reports a booked count of 1 for nearly every class. Its correlated subquery renders without table prefixes in a single-table select, so `class_id = id` compares two columns of `bookings`. `classes.list` escapes this only because its `leftJoin` makes Drizzle qualify the columns. | runtime + test |
+| 12 | ~~`admin.classUtilisation` reports a booked count of 1 for nearly every class.~~ **Fixed — see D8.** | |
 | 13 | `btn-sm`, `btn-outline`, `btn-danger`, `--fg` and `--bg-secondary` are referenced by the kiosk, company and trainer pages but defined nowhere, so those elements render unstyled. | code |
-| 14 | `/schedule` and the reschedule modal call `classes.list` with `from: new Date().toISOString()`, computed on every render. The query key changes each render, so the page refetches forever and never leaves its loading state. | runtime A/B |
+| 14 | ~~`/schedule` and the reschedule modal refetch forever and never leave the loading state.~~ **Fixed — see D8.** | |
 
-**#12 and #14 are the two worth raising.** Both make a visible feature not work:
-the admin dashboard's utilisation panel is meaningless, and the schedule page
-never renders. #14 was confirmed by dropping the original, unmodified page back
-into the refactored tree — it hangs identically, so it is pre-existing, not a
-regression. Both are one-line fixes (qualify the subquery; hoist the timestamp
-into `useState`/`useMemo`) and both are held pending a decision, because fixing
-them changes what the app does.
+---
+
+## D8 — Fix the two pre-existing bugs that broke a visible feature *(approved)*
+
+**Decision.** #12 and #14 were found during the refactor, documented, and left
+alone pending a decision. Both were then approved for fixing and are now fixed.
+
+**#12 — `admin.classUtilisation` reported a booked count of 1 for nearly every
+class.** The correlated subquery interpolated `${classes.id}`, and in a
+single-table select Drizzle renders columns unqualified, so `class_id = id`
+compared two columns of `bookings` and matched only the row whose id happened to
+equal its class id. `classes.list` escapes this only because its `leftJoin`
+forces qualification. Writing `classes.id` out in full fixes it.
+
+*Verification.* Checked against the seeded database: every row now matches a
+direct SQL count of the same statuses, and the panel reports a real spread
+(0, 4, 5, 7, 8, 12, 17) where it previously reported a constant 1.
+
+**#14 — `/schedule` never left its loading state.** It passed
+`from: new Date().toISOString()` to `useQuery`, recomputed on every render, so
+the query key changed each render and the page refetched forever. The same
+pattern was in the reschedule modal. The timestamp is now pinned at mount with
+`useState`.
+
+*Verification.* Confirmed pre-existing first, by dropping the original
+unmodified page back into the refactored tree — it hangs identically. After the
+fix the schedule renders 76 classes with real seat counts, and the network log
+shows a single request where it previously showed an unbounded stream.
+
+**Risk.** Both are intentional behaviour changes: a panel that showed a wrong
+number now shows the right one, and a page that never rendered now does. The two
+tests that pinned the old behaviour are now regression tests for the fix.
+
+**Alternatives.** Debounce or interval-round the schedule timestamp so the list
+refreshes as classes start. Rejected as scope creep — pinning at mount restores
+the page with the smallest possible change.
