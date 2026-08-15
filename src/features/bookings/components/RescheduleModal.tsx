@@ -29,13 +29,12 @@ export function RescheduleModal({
   const utils = trpc.useUtils();
 
   // Get available classes with the same name
+  // Pinned at mount for the same reason as the schedule page: a timestamp
+  // recomputed per render changes the query key and refetches forever.
+  const [from] = useState(() => new Date().toISOString());
   const { data: availableClasses } = trpc.classes.list.useQuery(
-    {
-      from: new Date().toISOString(),
-    },
-    {
-      enabled: isOpen,
-    }
+    { from },
+    { enabled: isOpen },
   );
 
   // Filter to only same-name classes (excluding the original)

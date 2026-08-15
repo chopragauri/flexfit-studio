@@ -73,9 +73,14 @@ export const adminRouter = router({
           name: classes.name,
           startsAt: classes.startsAt,
           capacity: classes.capacity,
+          // `classes.id` is written out rather than interpolated: in a
+          // single-table select Drizzle renders columns unqualified, so a bare
+          // `id` here would bind to `bookings` and compare it against
+          // `class_id`. classes.list avoids this only because its leftJoin
+          // makes Drizzle qualify everything.
           booked: sql<number>`(
             select count(*) from ${bookings}
-            where ${bookings.classId} = ${classes.id}
+            where ${bookings.classId} = classes.id
               and ${bookings.status} in ('booked','attended')
           )`.as("booked"),
         })

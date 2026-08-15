@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { formatDateTime } from "@/lib/format";
 import { ErrorAlert } from "@/components/ui/Alert";
@@ -8,9 +9,10 @@ import { EmptyState, LoadingState } from "@/components/ui/PageState";
 export default function SchedulePage() {
   const utils = trpc.useUtils();
   const { data: user } = trpc.auth.me.useQuery();
-  const { data: classes, isLoading } = trpc.classes.list.useQuery({
-    from: new Date().toISOString(),
-  });
+  // Pinned at mount. Recomputing this on every render would change the query
+  // key each time, so the query would refetch forever and never settle.
+  const [from] = useState(() => new Date().toISOString());
+  const { data: classes, isLoading } = trpc.classes.list.useQuery({ from });
 
   const book = trpc.bookings.book.useMutation({
     onSuccess: async () => {

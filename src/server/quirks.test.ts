@@ -214,12 +214,11 @@ describe("quirk 7: subscribing never expires the previous membership", () => {
   });
 });
 
-describe("quirk 12: admin.classUtilisation reports a booked count of 1 for every class", () => {
-  it("counts rows where a booking's id equals its class id, not the class's roster", async () => {
+describe("FIXED: admin.classUtilisation counts the real roster", () => {
+  it("agrees with the schedule's own booked count", async () => {
     const admin = await makeUser(db, { role: "admin" });
     const cls = await makeClass(db, { capacity: 10 });
 
-    // Three confirmed seats on one class.
     for (let i = 0; i < 3; i += 1) {
       const member = await makeMemberWithMembership(db);
       await caller(db, member.user).bookings.book({ classId: cls.id });
@@ -228,17 +227,31 @@ describe("quirk 12: admin.classUtilisation reports a booked count of 1 for every
     const [row] = (await caller(db, admin).admin.classUtilisation({})).filter(
       (r) => r.id === cls.id,
     );
-
-    // The true roster is 3. classUtilisation's correlated subquery renders
-    // without a table prefix, so `class_id = id` compares two columns of
-    // `bookings` and matches at most the single row whose id equals its
-    // class id. classes.list gets this right only because its leftJoin makes
-    // Drizzle qualify the columns.
     const fromSchedule = (await caller(db, null).classes.list({})).find(
       (c) => c.id === cls.id,
     );
+
+    // Both count the same seats, so they must agree.
     expect(fromSchedule!.booked).toBe(3);
-    expect(row.booked).not.toBe(3);
+    expect(row.booked).toBe(3);
+    expect(row.utilisation).toBeCloseTo(0.3);
+  });
+
+  it("counts attended seats too, and reports zero for an empty class", async () => {
+    const admin = await makeUser(db, { role: "admin" });
+    const staff = await makeUser(db, { role: "admin" });
+    const busy = await makeClass(db, { capacity: 4 });
+    const empty = await makeClass(db, { capacity: 4 });
+
+    const member = await makeMemberWithMembership(db);
+    const booking = await caller(db, member.user).bookings.book({
+      classId: busy.id,
+    });
+    await caller(db, staff).bookings.markAttended({ bookingId: booking.id });
+
+    const rows = await caller(db, admin).admin.classUtilisation({});
+    expect(rows.find((r) => r.id === busy.id)!.booked).toBe(1);
+    expect(rows.find((r) => r.id === empty.id)!.booked).toBe(0);
   });
 });
 
